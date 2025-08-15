@@ -1,15 +1,18 @@
-import { ApiError, asyncHandler } from '../middlewares/errorMiddleware.js';
+import { ApiError, asyncHandler, ApiResponse } from '../utils/apiUtils.js';
 import Chat from '../models/chat.model.js';
-import Messages from '../models/message.schema.js';
+import Messages from '../models/message.model.js';
 import { HTTP_STATUS } from '../constants/constants.js';
+import uploadFileToCloudinary from '../services/cloudinary.service.js';
 
 export const sendMessageHandler = asyncHandler(async (req, res) => {
     const { message } = req.body;
+    const file = req.file;
     const senderId = req.user._id;
     const { id: receiverId } = req.params;
+    console.log(senderId, receiverId);
 
-    if (!message.trim() || !senderId || !receiverId) {
-        throw new ApiError(HTTP_STATUS.VALIDATION_ERROR, 'Missing Fields!');
+    if (!senderId || !receiverId) {
+        throw new ApiError(HTTP_STATUS.VALIDATION_ERROR, 'Missing Ids Fields!');
     }
 
     let chat = await Chat.findOne({
@@ -23,10 +26,37 @@ export const sendMessageHandler = asyncHandler(async (req, res) => {
         });
     }
 
+    let  messageType = null;
+    let imageOrVideoUrl = null;
+
+    if (file) {
+        const uploadFile = await uploadFileToCloudinary(file);
+
+        if (!uploadFile?.secure_url) {
+            throw new ApiError(HTTP_STATUS.SERVICE_UNAVAILABLE, 'Failed to upload media');
+        }
+
+        imageOrVideoUrl = uploadFile.secure_url;
+
+        if (file.mimetype.startsWith('image')) {
+             messageType = 'image';
+        } else if (file.mimetype.startsWith('video')) {
+             messageType = 'video';
+        } else {
+            throw new ApiError(HTTP_STATUS.BAD_REQUEST, 'Content type not supported');
+        }
+    } else if (message?.trim()) {
+         messageType = 'text';
+    } else {
+        throw new ApiError(HTTP_STATUS.BAD_REQUEST, 'Message content is required');
+    }
+
     const newMessage = new Messages({
         senderId,
         receiverId,
-        message
+        message,
+         messageType,
+        imageOrVideoUrl
     });
 
     if (newMessage) {
@@ -34,7 +64,8 @@ export const sendMessageHandler = asyncHandler(async (req, res) => {
     }
 
     await Promise.all([newMessage.save(), chat.save()]);
-    return res.status(HTTP_STATUS.OK).json({ success: true, message: 'message sent!', newMessage });
+
+    return new ApiResponse(HTTP_STATUS.OK, 'Message Sent!', newMessage).send(res)
 });
 
 export const getMessageHandler = asyncHandler(async (req, res) => {
@@ -52,5 +83,5 @@ export const getMessageHandler = asyncHandler(async (req, res) => {
         throw new ApiError(HTTP_STATUS.NOT_FOUND, 'chat not found!');
     }
 
-    return res.status(HTTP_STATUS.OK).json({ success: true, chat });
+    return new ApiResponse(HTTP_STATUS.OK, 'message fetch success!', chat ).send(res);
 });

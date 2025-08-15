@@ -1,16 +1,16 @@
 import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '../config/env.config.js';
-import { ApiError } from '../middlewares/errorMiddleware.js';
+import { ApiError } from '../utils/apiUtils.js';
 import { HTTP_STATUS } from '../constants/constants.js';
 
 // Create a JWT token
-export const createToken = (user, expiresIn = '7d') => {
+export const createToken = (user) => {
     const payload = {
         id: user._id,
         username: user.username
     };
 
-    return jwt.sign(payload, JWT_SECRET, { expiresIn });
+    return jwt.sign(payload, JWT_SECRET, { expiresIn : '1d' });
 };
 
 // Verify a JWT token

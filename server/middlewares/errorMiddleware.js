@@ -1,25 +1,20 @@
-export class ApiError extends Error {
-    constructor(statusCode, message) {
-        super(message);
-        ((this.statusCode = statusCode), (this.message = message));
-    }
-}
+import { ApiError, ApiResponse } from '../utils/apiUtils.js';
+import { HTTP_STATUS } from '../constants/constants.js';
 
-export const asyncHandler = (fn) => (req, res, next) => {
-    return Promise.resolve(fn(req, res, next)).catch(next);
-};
+export const globalErrorHandler = (err, _req, res, _next) => {
+    console.error(err);
 
-export const globalErrorHandler = (err, req, res, next) => {
-    console.log(err);
     if (err instanceof ApiError) {
-        return res.status(err.statusCode || 500).json({ success: false, message: err.message });
-    }
-    if (err.name === 'ValidationError') {
-        return res.status(400).json({ success: false, message: err.message });
-    }
-    if (err.code === 11000) {
-        return res.status(409).json({ success: false, message: err.message });
+        return new ApiResponse(err.statusCode || 500, err.message).send(res);
     }
 
-    return res.status(500).json({ success: false, message: 'Internal Server Error' });
+    if (err.name === 'ValidationError') {
+        return new ApiResponse(HTTP_STATUS.VALIDATION_ERROR, err.message).send(res);
+    }
+
+    if (err.code === 11000) {
+        return new ApiResponse(HTTP_STATUS.CONFLICT, 'Duplicate field value entered').send(res);
+    }
+
+    return new ApiResponse(HTTP_STATUS.INTERNAL_SERVER_ERROR, 'Internal Server Error').send(res);
 };

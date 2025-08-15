@@ -1,6 +1,6 @@
 import { HTTP_STATUS } from '../constants/constants.js';
 import { verifyToken } from '../utils/createToken.js';
-import { ApiError, asyncHandler } from './errorMiddleware.js';
+import { ApiError, asyncHandler } from '../utils/apiUtils.js';
 import User from '../models/user.model.js';
 
 export const checkAuth = asyncHandler(async (req, res, next) => {

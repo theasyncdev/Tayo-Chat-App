@@ -10,6 +10,8 @@ import authRouter from './routes/auth.routes.js';
 import userRouter from './routes/user.routes.js';
 import { checkAuth } from './middlewares/checkAuth.js';
 import messageRouter from './routes/message.routes.js';
+import groupRouter from './routes/group.routes.js';
+import limiter from './middlewares/rateLimiter.js';
 
 const app = express();
 
@@ -21,6 +23,7 @@ if (!PORT) {
 
 // Middleware setup
 app.use(helmet());
+app.use(limiter)
 app.use(
     cors({
         origin: CLIENT_ORIGIN || '*',
@@ -36,6 +39,7 @@ app.use(cookieParser());
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/users', checkAuth, userRouter);
 app.use('/api/v1/messages', checkAuth, messageRouter);
+app.use('/api/v1/groups',checkAuth, groupRouter);
 
 app.get('/', (req, res) => {
     res.status(200).json({ message: 'HELLO FROM TAYO API' });

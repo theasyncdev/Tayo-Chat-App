@@ -30,6 +30,13 @@ const userSchema = new mongoose.Schema(
         },
         avatar: {
             type: String
+        },
+        isOnline: {
+            type : Boolean,
+            default: false
+        },
+        lastSeen: {
+            type : Date
         }
     },
     { timestamps: true }

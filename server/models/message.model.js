@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 
 const messageSchema = new mongoose.Schema(
     {
+        chat: { type: mongoose.Schema.Types.ObjectId, ref: 'chat' },
         senderId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'user',
@@ -11,10 +12,14 @@ const messageSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: 'user',
             required: true
-        },
+        }, 
         message: {
             type: String,
-            required: true
+        },
+        imageOrVideoUrl : {type: String},
+        messageType: {
+            type: String,
+            enum: ['text', 'image', 'video']
         }
     },
     {
@@ -22,6 +27,6 @@ const messageSchema = new mongoose.Schema(
     }
 );
 
-const Messages = mongoose.models.messages || mongoose.model('message', messageSchema);
+const Messages = mongoose.models.message || mongoose.model('message', messageSchema);
 
 export default Messages;
